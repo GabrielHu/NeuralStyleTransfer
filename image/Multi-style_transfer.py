@@ -14,7 +14,6 @@ from keras.models import Sequential, Model
 from keras.engine.topology import Layer
 from keras.preprocessing.image import img_to_array, load_img
 from keras import backend as K
-import argparse
 
 
 def preprocess_img(img_path):
@@ -115,7 +114,7 @@ def total_variation_loss(x):
     return K.sum(K.pow(a + b, 1.25))
 
 
-def loss(input_tensor):
+def loss(combination_image):
     '''The loss function to minimize
 
     Args:
@@ -124,16 +123,15 @@ def loss(input_tensor):
     Return:
         a scalar. 
     '''
-    model = vgg16.VGG16(input_tensor=input_tensor,
-                        weights='imagenet', include_top=False)
-    outputs_dict = dict([(layer.name, layer.output) for layer in model.layers])
+
+    outputs_dict = dict([(layer.name, layer.output) for layer in pre_model.layers])
     loss = K.variable(0.)
     layer_features = outputs_dict['block4_conv2']
 
     base_image_features = layer_features[0, :, :, :]
     combination_features = layer_features[2, :, :, :]
-    loss += content_weight * content_loss(base_image_features,
-                                          combination_features)
+    loss += content_loss(base_image_features,
+                         combination_features)
 
     feature_layers = ['block1_conv1', 'block2_conv1',
                       'block3_conv1', 'block4_conv1',
@@ -143,8 +141,8 @@ def loss(input_tensor):
         style_reference_features = layer_features[1, :, :, :]
         combination_features = layer_features[2, :, :, :]
         sl = style_loss(style_reference_features, combination_features)
-        loss += (style_weight / len(feature_layers)) * sl
-    loss += total_variation_weight * total_variation_loss(combination_image)
+        loss += (0.1 / len(feature_layers)) * sl
+    loss += 0.05 * total_variation_loss(combination_image)
     return loss
 
 
@@ -184,6 +182,19 @@ def _upsampling_block(input_shape, filters):
     return Model(inputs=input, outputs=output)
 
 
+
+base_img = K.concatenate()
+combination_img = K.variable(preprocess_image(np.random.uniform(0,255,K.shape(base_img)))
+
+
+pre_model = vgg16.VGG16(input_tensor=input_tensor,
+                    weights='imagenet', include_top=False)
+
+
+
+
+
+
 model = Sequential()
 model.add(Conv2D(32, (9, 9), padding='same', activation='relu',
                  input_shape=(None, 256, 256, None)))
@@ -201,3 +212,4 @@ model.add(Conv2D(3, (9, 9), padding='same', activation='sigmoid'))
 
 model.compile(optimizer='adam', loss='categorical_crossentropy',
               metrics=['accuracy'])
+model.fit()
