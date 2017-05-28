@@ -71,3 +71,22 @@ def list_files(in_path):
         files.extend(filenames)
         break
     return files
+
+
+def deprocess_img(img):
+    '''Change VGG tensor to image matrix.
+
+    Args: 
+        img: a 4-D tensor. a processed 4-D tensor.
+
+    Return:
+        a 3-D tensor. The tensor of generated image.
+    '''
+    img = img.reshape((256, 256, 3))
+    img[:, :, 0] += 103.939
+    img[:, :, 1] += 116.779
+    img[:, :, 2] += 123.68
+    # 'BGR'->'RGB'
+    img = img[:, :, ::-1]
+    img = np.clip(img, 0, 255).astype('uint8')
+    return img
